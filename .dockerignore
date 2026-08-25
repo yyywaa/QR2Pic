@@ -1,0 +1,27 @@
+# Rust build artifacts
+target/
+
+# Git files
+.git/
+.gitignore
+
+# Environment files (except example)
+.env
+
+# Log files
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Test and build scripts (not needed in production)
+test_build.sh
+wsl_test.sh
+install_deps.sh

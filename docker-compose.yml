@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  qr2pic:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - STORAGE_PATH=${STORAGE_PATH:-/app/uploads}
+      - STORAGE_URL=${STORAGE_URL:-http://localhost:3000/images}
+      - SERVER_PORT=3000
+      - DELETE_KEY=${DELETE_KEY}
+      - RUST_LOG=${RUST_LOG:-info}
+    volumes:
+      - ./migrations:/app/migrations
+      - qr2pic_uploads:/app/uploads
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=qr2pic
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  qr2pic_uploads:

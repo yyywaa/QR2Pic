@@ -1,0 +1,30 @@
+# Environment and secrets
+.env
+*.pem
+*.key
+
+# Rust build artifacts
+/target/
+
+# Scripts data (QR images, zips, csvs) — only .py code is tracked
+scripts/*
+!scripts/*.py
+!scripts/requirements.txt
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.bak
