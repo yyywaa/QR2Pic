@@ -36,8 +36,9 @@ QR2Pic/
 
 ### POST `/upload`
 - **功能**: 上传图片文件，保存到本地存储并将映射关系写入数据库
+- **认证**: 设置了 `UPLOAD_KEY` 环境变量时，必须携带匹配的 `X-Upload-Key` 请求头（生产环境务必设置）
 - **请求**: `multipart/form-data`，字段 `file`
-- **限制**: 最大 10MB，支持 JPG、PNG、GIF、WebP
+- **限制**: 最大 10MB（流式校验，超限即断）；支持 JPG、PNG、GIF、WebP，扩展名与文件内容魔数双重校验
 - **响应**:
 ```json
 {
@@ -96,6 +97,7 @@ curl http://localhost:3000/health
 | STORAGE_URL | 图片外链基础 URL | `http://localhost:3000/images` |
 | SERVER_PORT | 服务端口（默认 3000） | `3000` |
 | DELETE_KEY | 删除/恢复接口密钥（必填，建议 32 位随机串） | `your_delete_key_here` |
+| UPLOAD_KEY | 上传接口密钥（可选，生产强烈建议设置） | `your_upload_key_here` |
 | RUST_LOG | 日志级别（可选） | `info` |
 
 ## 本地开发
@@ -132,7 +134,9 @@ sqlx migrate run
 
 ## 安全说明
 
-1. **写操作鉴权**: `DELETE /delete/:id` 与 `PUT /restore/:key` 通过 `X-Delete-Key` 请求头认证，密钥存于环境变量
-2. **文件验证**: 校验文件类型与大小，防止恶意上传
-3. **路径安全**: 恢复接口拒绝包含路径分隔符或 `..` 的文件名，防止路径穿越
-4. **CORS**: 默认允许所有来源，生产环境可按需收紧
+1. **写操作鉴权**: `DELETE /delete/:id` 与 `PUT /restore/:key` 通过 `X-Delete-Key` 请求头认证；设置 `UPLOAD_KEY` 后 `POST /upload` 同样需要 `X-Upload-Key`。密钥比较使用恒定时间算法，防时序侧信道
+2. **文件验证**: 扩展名白名单 + 文件内容魔数双重校验；大小限制为流式校验，超限立即截断，防止内存耗尽攻击
+3. **路径安全**: 上传文件名不参与路径拼接；恢复接口拒绝包含路径分隔符或 `..` 的文件名，防止路径穿越
+4. **错误脱敏**: 5xx 错误只向客户端返回通用提示，SQL 错误、文件路径等细节仅写入服务端日志
+5. **数据库**: docker-compose 中 PostgreSQL 仅绑定本地回环地址，密码无默认值必须显式配置
+6. **CORS**: 默认允许所有来源，生产环境可按需收紧

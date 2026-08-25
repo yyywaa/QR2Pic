@@ -72,6 +72,24 @@ impl Storage {
     pub fn is_allowed_extension(extension: &str) -> bool {
         matches!(extension, "jpg" | "jpeg" | "png" | "gif" | "webp")
     }
+
+    /// 通过魔数识别文件的真实图片格式，返回规范化扩展名（jpeg 归一为 jpg）。
+    /// 识别不了时返回 None。
+    pub fn sniff_image_type(data: &[u8]) -> Option<&'static str> {
+        if data.starts_with(&[0xFF, 0xD8, 0xFF]) {
+            return Some("jpg");
+        }
+        if data.starts_with(b"\x89PNG\r\n\x1a\n") {
+            return Some("png");
+        }
+        if data.starts_with(b"GIF87a") || data.starts_with(b"GIF89a") {
+            return Some("gif");
+        }
+        if data.len() >= 12 && &data[0..4] == b"RIFF" && &data[8..12] == b"WEBP" {
+            return Some("webp");
+        }
+        None
+    }
 }
 
 #[cfg(test)]

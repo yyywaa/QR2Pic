@@ -11,27 +11,19 @@ type AppState = (
     crate::storage::Storage,
     crate::db::ImageRepository,
     String,
+    Option<String>,
 );
-
-const MAX_FILE_SIZE: usize = 10 * 1024 * 1024;
 
 /// 按指定文件名恢复图片文件到存储（仅写文件，不动数据库）。
 /// 用于灾难恢复：数据库记录还在、文件丢失时，按 images.file_path 把原图放回去。
-/// 鉴权复用 X-Delete-Key。
+/// 鉴权复用 X-Delete-Key。body 大小由路由层的 DefaultBodyLimit 限制。
 pub async fn restore_file(
-    State((_, storage, _, delete_key)): State<AppState>,
+    State((_, storage, _, delete_key, _)): State<AppState>,
     Path(key): Path<String>,
     headers: HeaderMap,
     body: Bytes,
 ) -> Result<Response, AppError> {
-    let provided_key = headers
-        .get("X-Delete-Key")
-        .and_then(|v| v.to_str().ok())
-        .ok_or(AppError::MissingDeleteKey)?;
-
-    if provided_key != delete_key {
-        return Err(AppError::InvalidDeleteKey);
-    }
+    crate::handlers::check_key(&headers, "X-Delete-Key", &delete_key)?;
 
     // 防止路径穿越，key 必须是单纯的 "<uuid>.<ext>" 文件名
     if key.contains('/') || key.contains('\\') || key.contains("..") {
@@ -46,7 +38,7 @@ pub async fn restore_file(
     if body.is_empty() {
         return Err(AppError::MissingFile);
     }
-    if body.len() > MAX_FILE_SIZE {
+    if body.len() > crate::routes::MAX_FILE_SIZE {
         return Err(AppError::FileTooLarge);
     }
 

@@ -11,10 +11,11 @@ type AppState = (
     crate::storage::Storage,
     crate::db::ImageRepository,
     String,
+    Option<String>,
 );
 
 pub async fn get_view(
-    State((_, storage, image_repo, _)): State<AppState>,
+    State((_, storage, image_repo, ..)): State<AppState>,
     Path(id): Path<Uuid>,
 ) -> Result<Response, AppError> {
     let image = image_repo
@@ -67,7 +68,7 @@ let image_data_url = format!("/view-data/{}", id);
 }
 
 pub async fn get_view_data(
-    State((_, storage, image_repo, _)): State<AppState>,
+    State((_, storage, image_repo, ..)): State<AppState>,
     Path(id): Path<Uuid>,
 ) -> Result<Response, AppError> {
     let image = image_repo

@@ -31,9 +31,11 @@ services:
     environment:
       - POSTGRES_DB=qr2pic
       - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      # 必须显式设置，无默认值，避免弱密码上线
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
     ports:
-      - "5432:5432"
+      # 只绑定本地回环，不对公网暴露；容器间通过内部网络访问
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:

@@ -11,21 +11,15 @@ type AppState = (
     crate::storage::Storage,
     crate::db::ImageRepository,
     String,
+    Option<String>,
 );
 
 pub async fn delete_image(
-    State((_, storage, image_repo, delete_key)): State<AppState>,
+    State((_, storage, image_repo, delete_key, _)): State<AppState>,
     Path(id): Path<Uuid>,
     headers: HeaderMap,
 ) -> Result<Response, AppError> {
-    let provided_key = headers
-        .get("X-Delete-Key")
-        .and_then(|v| v.to_str().ok())
-        .ok_or(AppError::MissingDeleteKey)?;
-
-    if provided_key != delete_key {
-        return Err(AppError::InvalidDeleteKey);
-    }
+    crate::handlers::check_key(&headers, "X-Delete-Key", &delete_key)?;
 
     let image = image_repo
         .find_by_id(id)

@@ -11,10 +11,11 @@ type AppState = (
     crate::storage::Storage,
     crate::db::ImageRepository,
     String,
+    Option<String>,
 );
 
 pub async fn get_image(
-    State((_, storage, image_repo, _)): State<AppState>,
+    State((_, storage, image_repo, ..)): State<AppState>,
     Path(id): Path<Uuid>,
 ) -> Result<Response, AppError> {
     let image = image_repo

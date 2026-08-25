@@ -11,6 +11,8 @@ pub struct Config {
     pub storage_url: String,
     pub server_port: u16,
     pub delete_key: String,
+    /// 可选：设置后 /upload 需要 X-Upload-Key 头。强烈建议生产环境设置。
+    pub upload_key: Option<String>,
 }
 
 impl Config {
@@ -26,6 +28,12 @@ impl Config {
             .unwrap_or_else(|_| "3000".to_string())
             .parse::<u16>()?;
         let delete_key = env::var("DELETE_KEY")?;
+        let upload_key = env::var("UPLOAD_KEY").ok().filter(|k| !k.is_empty());
+        if upload_key.is_none() {
+            tracing::warn!(
+                "UPLOAD_KEY is not set: /upload is open to anyone. Set UPLOAD_KEY in production."
+            );
+        }
 
         Ok(Config {
             database_url,
@@ -33,6 +41,7 @@ impl Config {
             storage_url,
             server_port,
             delete_key,
+            upload_key,
         })
     }
 

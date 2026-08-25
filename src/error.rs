@@ -73,6 +73,11 @@ impl IntoResponse for AppError {
         };
 
         let body = format!("Error: {}", self);
+        // 5xx 不向客户端回传内部细节（SQL 错误、文件系统路径等），完整错误只写日志
+        if status.is_server_error() {
+            tracing::error!("internal error: {:?}", self);
+            return (status, "Error: Internal server error".to_string()).into_response();
+        }
         (status, body).into_response()
     }
 }

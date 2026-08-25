@@ -16,9 +16,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     storage.init().await?;
 
     let app = create_router(
-        pool, 
-        storage, 
-        config.delete_key
+        pool,
+        storage,
+        config.delete_key,
+        config.upload_key,
     );
 
     let addr = SocketAddr::from(([0, 0, 0, 0], config.server_port));
