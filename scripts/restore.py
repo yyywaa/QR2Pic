@@ -23,7 +23,7 @@ from urllib.parse import urlparse
 
 import requests
 
-BASE_URL = os.environ.get("RESTORE_BASE_URL", "https://cccf.zeabur.app")
+BASE_URL = os.environ.get("RESTORE_BASE_URL", "http://localhost:3000")
 DELETE_KEY = os.environ.get("RESTORE_DELETE_KEY", "")
 
 SCRIPT_DIR = Path(__file__).resolve().parent

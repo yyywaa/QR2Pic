@@ -57,16 +57,20 @@ def get_file_extension(filename: str) -> str:
     return ext.lstrip(".")
 
 
-def upload_image(api_url: str, file_path: str, retry: int = 3) -> Optional[dict]:
-    """上传图片到服务器"""
+def upload_image(api_url: str, file_path: str, retry: int = 3, upload_key: str = "") -> Optional[dict]:
+    """上传图片到服务器（服务端设置 UPLOAD_KEY 时需携带 X-Upload-Key 头）"""
+    headers = {"X-Upload-Key": upload_key} if upload_key else {}
     for attempt in range(retry):
         try:
             with open(file_path, "rb") as f:
                 files = {"file": f}
-                response = requests.post(api_url, files=files, timeout=30, verify=False)
+                response = requests.post(api_url, files=files, headers=headers, timeout=30, verify=False)
 
             if response.status_code == 200:
                 return response.json()
+            elif response.status_code == 401:
+                print(f"  [错误] 鉴权失败 (401)，请检查 UPLOAD_KEY: {file_path}")
+                return None
             elif response.status_code == 413:
                 print(f"  [错误] 文件过大: {file_path}")
                 return None
@@ -167,6 +171,7 @@ def process_batch(
     base_url: Optional[str] = None,
     recursive: bool = False,
     preserve_structure: bool = False,
+    upload_key: str = "",
 ) -> None:
     """批量处理图片"""
     input_path = Path(input_dir)
@@ -207,7 +212,7 @@ def process_batch(
             skip_count += 1
             continue
 
-        result = upload_image(api_url, str(image_file))
+        result = upload_image(api_url, str(image_file), upload_key=upload_key)
 
         if result is None:
             print(f"  [错误] 上传失败")
@@ -298,6 +303,12 @@ def main():
         default=os.environ.get("BASE_URL", ""),
         help="用于生成二维码的访问基础URL (可选)",
     )
+    parser.add_argument(
+        "--upload-key",
+        type=str,
+        default=os.environ.get("UPLOAD_KEY", ""),
+        help="上传接口密钥 (默认读 UPLOAD_KEY 环境变量，服务端启用 UPLOAD_KEY 时必填)",
+    )
     parser.add_argument("--no-skip", action="store_true", help="不跳过已处理的文件")
     parser.add_argument(
         "--retry", type=int, default=3, help="上传失败重试次数 (默认: 3)"
@@ -320,6 +331,7 @@ def main():
     print(f"映射文件: {args.mapping}")
     if args.base_url:
         print(f"基础URL: {args.base_url}")
+    print(f"上传密钥: {'已设置' if args.upload_key else '未设置'}")
     print("=" * 50)
 
     process_batch(
@@ -331,6 +343,7 @@ def main():
         base_url=args.base_url if args.base_url else None,
         recursive=args.recursive,
         preserve_structure=args.preserve_structure,
+        upload_key=args.upload_key,
     )
 
 

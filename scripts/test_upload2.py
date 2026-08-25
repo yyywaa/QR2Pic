@@ -5,9 +5,11 @@
 
 import requests
 from pathlib import Path
+import os
 import sys
 
-API_BASE = "https://cccf.zeabur.app"
+API_BASE = os.environ.get("API_BASE", "http://localhost:3000")
+UPLOAD_KEY = os.environ.get("UPLOAD_KEY", "")
 
 def create_session():
     """创建配置好的请求会话"""
@@ -46,9 +48,10 @@ def test_upload(session):
     print(f"上传图片: {test_image.name} ({test_image.stat().st_size} 字节)")
     
     try:
+        headers = {"X-Upload-Key": UPLOAD_KEY} if UPLOAD_KEY else {}
         with open(test_image, 'rb') as f:
             files = {'file': (test_image.name, f, 'image/jpeg')}
-            response = session.post(f"{API_BASE}/upload", files=files, timeout=30)
+            response = session.post(f"{API_BASE}/upload", files=files, headers=headers, timeout=30)
         
         print(f"状态码: {response.status_code}")
         print(f"响应头: {dict(response.headers)}")

@@ -9,22 +9,24 @@ import sys
 import requests
 from pathlib import Path
 
-API_BASE = "http://cccf.zeabur.app"
+API_BASE = os.environ.get("API_BASE", "http://localhost:3000")
+UPLOAD_KEY = os.environ.get("UPLOAD_KEY", "")
 
 def test_upload():
     """测试图片上传"""
     test_image = Path("test/70154AA03257AA.jpg")
-    
+
     if not test_image.exists():
         print(f"错误: 测试图片不存在 - {test_image}")
         return None
-    
+
     print(f"上传图片: {test_image.name} ({test_image.stat().st_size} 字节)")
-    
+
     try:
+        headers = {"X-Upload-Key": UPLOAD_KEY} if UPLOAD_KEY else {}
         with open(test_image, 'rb') as f:
             files = {'file': (test_image.name, f, 'image/jpeg')}
-            response = requests.post(f"{API_BASE}/upload", files=files, timeout=30, verify=False)
+            response = requests.post(f"{API_BASE}/upload", files=files, headers=headers, timeout=30, verify=False)
         
         print(f"状态码: {response.status_code}")
         print(f"响应头: {dict(response.headers)}")
